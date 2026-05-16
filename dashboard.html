@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ride Dispatch — George Schuler</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --indigo: #2825BE;
+    --amber: #EB9001;
+    --teal: #0C7A7A;
+    --terra: #CF4C38;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --border: #e5e5e0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Login screen */
+  .login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+
+  .login-card h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .login-card p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-family: inherit;
+  }
+
+  .login-card button {
+    width: 100%;
+    padding: 12px;
+    background: var(--indigo);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .login-msg {
+    margin-top: 12px;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+  .login-msg.success { background: rgba(12,122,122,0.1); color: var(--teal); }
+  .login-msg.error { background: rgba(207,76,56,0.1); color: var(--terra); }
+
+  /* Main app */
+  .app {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .brand {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .tab.active {
+    color: var(--ink);
+    border-bottom-color: var(--indigo);
+  }
+
+  .tab .count {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .tab.active .count {
+    background: var(--indigo);
+    color: #fff;
+  }
+
+  /* Request card */
+  .request-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+
+  .request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rider-info {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .rider-name {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .rider-contact {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .rider-contact a {
+    color: var(--indigo);
+    text-decoration: none;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .status-pending { background: rgba(235,144,1,0.15); color: #8a5400; }
+  .status-approved { background: rgba(12,122,122,0.15); color: var(--teal); }
+  .status-rejected { background: rgba(207,76,56,0.12); color: var(--terra); }
+  .status-completed { background: rgba(40,37,190,0.1); color: var(--indigo); }
+
+  .request-when {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--indigo);
+    margin-bottom: 12px;
+  }
+
+  .request-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  @media (min-width: 600px) {
+    .request-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .field-block {
+    font-size: 14px;
+  }
+
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+
+  .field-value {
+    color: var(--ink);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .field-block.full {
+    grid-column: 1 / -1;
+  }
+
+  .request-meta {
+    display: flex;
+    gap: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item strong { color: var(--ink); font-weight: 600; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .btn-approve {
+    background: var(--teal);
+    color: #fff;
+    border-color: var(--teal);
+  }
+  .btn-approve:hover { background: #0a6868; }
+
+  .btn-reject {
+    background: #fff;
+    color: var(--terra);
+    border-color: var(--terra);
+  }
+  .btn-reject:hover { background: rgba(207,76,56,0.06); }
+
+  .btn-complete {
+    background: var(--indigo);
+    color: #fff;
+    border-color: var(--indigo);
+  }
+
+  .btn-reopen {
+    background: #fff;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+
+  .btn-copy {
+    background: var(--amber);
+    color: #fff;
+    border-color: var(--amber);
+  }
+  .btn-copy:hover { background: #d18001; }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="login-screen" class="login-screen">
+  <div class="login-card">
+    <h1>Ride Dispatch</h1>
+    <p>Sign in to manage ride requests.</p>
+    <input type="email" id="login-email" placeholder="your@email.com" autocomplete="email">
+    <button onclick="sendMagicLink()">Send magic link</button>
+    <div id="login-msg" class="login-msg" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="app" class="app" style="display:none;">
+  <header>
+    <div>
+      <div class="brand">George Schuler</div>
+      <h1>Ride Dispatch</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">Sign out</button>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-status="pending">Pending <span class="count" id="count-pending">0</span></button>
+    <button class="tab" data-status="approved">Approved <span class="count" id="count-approved">0</span></button>
+    <button class="tab" data-status="completed">Completed <span class="count" id="count-completed">0</span></button>
+    <button class="tab" data-status="rejected">Rejected <span class="count" id="count-rejected">0</span></button>
+  </div>
+
+  <div id="requests-container">
+    <div class="loading">Loading requests…</div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentTab = 'pending';
+  let allRequests = [];
+
+  // Auth
+  async function sendMagicLink() {
+    const email = document.getElementById('login-email').value.trim();
+    const msg = document.getElementById('login-msg');
+    if (!email) {
+      msg.textContent = 'Please enter your email.';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+      return;
+    }
+    const { error } = await db.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if (error) {
+      msg.textContent = error.message;
+      msg.className = 'login-msg error';
+    } else {
+      msg.textContent = 'Check your email for the sign-in link.';
+      msg.className = 'login-msg success';
+    }
+    msg.style.display = 'block';
+  }
+
+  async function logout() {
+    await db.auth.signOut();
+    location.reload();
+  }
+
+  async function checkAuth() {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      await loadRequests();
+    } else {
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.status;
+      renderRequests();
+    });
+  });
+
+  // Data
+  async function loadRequests() {
+    const { data, error } = await db
+      .from('ride_requests')
+      .select('*')
+      .order('ride_datetime', { ascending: true });
+
+    if (error) {
+      document.getElementById('requests-container').innerHTML =
+        `<div class="empty">Error loading: ${error.message}</div>`;
+      return;
+    }
+
+    allRequests = data || [];
+    updateCounts();
+    renderRequests();
+  }
+
+  function updateCounts() {
+    const counts = { pending: 0, approved: 0, completed: 0, rejected: 0 };
+    allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    Object.keys(counts).forEach(k => {
+      document.getElementById('count-' + k).textContent = counts[k];
+    });
+  }
+
+  function renderRequests() {
+    const container = document.getElementById('requests-container');
+    const filtered = allRequests.filter(r => r.status === currentTab);
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="empty">No ${currentTab} requests.</div>`;
+      return;
+    }
+
+    // Pending: oldest submission first. Others: soonest ride first.
+    if (currentTab === 'pending') {
+      filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    } else {
+      filtered.sort((a, b) => new Date(a.ride_datetime) - new Date(b.ride_datetime));
+    }
+
+    container.innerHTML = filtered.map(r => renderCard(r)).join('');
+  }
+
+  function fmtDateTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  }
+
+  function fmtRelative(iso) {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = (d - now) / 1000 / 60;
+    if (diff < -60) return 'past';
+    if (diff < 60) return 'soon';
+    if (diff < 1440) return `in ${Math.round(diff / 60)}h`;
+    return `in ${Math.round(diff / 1440)}d`;
+  }
+
+  function tierLabel(tier) {
+    return {
+      'under_30': 'Under 30 min',
+      '30_to_60': '30 min – 1 hr',
+      '60_to_120': '1 – 2 hrs'
+    }[tier] || tier;
+  }
+
+  function contactLink(contact, type) {
+    if (type === 'phone') {
+      const clean = contact.replace(/[^0-9+]/g, '');
+      return `<a href="tel:${clean}">${contact}</a> · <a href="sms:${clean}">text</a>`;
+    } else {
+      return `<a href="mailto:${contact}">${contact}</a>`;
+    }
+  }
+
+  function renderCard(r) {
+    return `
+      <div class="request-card">
+        <div class="request-header">
+          <div class="rider-info">
+            <div class="rider-name">${escapeHtml(r.rider_name)}</div>
+            <div class="rider-contact">${contactLink(escapeHtml(r.rider_contact), r.contact_type)}</div>
+          </div>
+          <span class="status-badge status-${r.status}">${r.status}</span>
+        </div>
+
+        <div class="request-when">${fmtDateTime(r.ride_datetime)} <span style="color:var(--muted);font-weight:400;">· ${fmtRelative(r.ride_datetime)}</span></div>
+
+        <div class="request-grid">
+          <div class="field-block">
+            <div class="field-label">Pickup</div>
+            <div class="field-value">${escapeHtml(r.pickup_address)}</div>
+          </div>
+          <div class="field-block">
+            <div class="field-label">Drop-off</div>
+            <div class="field-value">${escapeHtml(r.dropoff_address)}</div>
+          </div>
+          ${r.stops ? `<div class="field-block full"><div class="field-label">Stops</div><div class="field-value" style="white-space:pre-line">${escapeHtml(r.stops)}</div></div>` : ''}
+          ${r.reason ? `<div class="field-block"><div class="field-label">Reason</div><div class="field-value">${escapeHtml(r.reason)}</div></div>` : ''}
+          ${r.notes ? `<div class="field-block full"><div class="field-label">Notes</div><div class="field-value">${escapeHtml(r.notes)}</div></div>` : ''}
+        </div>
+
+        <div class="request-meta">
+          <div class="meta-item"><strong>${tierLabel(r.duration_tier)}</strong></div>
+          <div class="meta-item">Fee <strong>$${r.estimated_fee}</strong></div>
+          <div class="meta-item">Submitted ${new Date(r.created_at).toLocaleDateString()}</div>
+        </div>
+
+        <div class="actions">
+          ${renderActions(r)}
+          <button class="btn btn-copy" onclick="copyDetails('${r.id}')">Copy for calendar</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderActions(r) {
+    if (r.status === 'pending') {
+      return `
+        <button class="btn btn-approve" onclick="updateStatus('${r.id}', 'approved')">Approve</button>
+        <button class="btn btn-reject" onclick="updateStatus('${r.id}', 'rejected')">Reject</button>
+      `;
+    }
+    if (r.status === 'approved') {
+      return `<button class="btn btn-complete" onclick="updateStatus('${r.id}', 'completed')">Mark complete</button>`;
+    }
+    return `<button class="btn btn-reopen" onclick="updateStatus('${r.id}', 'pending')">Move back to pending</button>`;
+  }
+
+  async function updateStatus(id, newStatus) {
+    const { error } = await db
+      .from('ride_requests')
+      .update({ status: newStatus, decided_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      showToast('Error: ' + error.message);
+      return;
+    }
+    showToast(`Marked as ${newStatus}`);
+    await loadRequests();
+  }
+
+  function copyDetails(id) {
+    const r = allRequests.find(x => x.id === id);
+    if (!r) return;
+    const when = fmtDateTime(r.ride_datetime);
+    const text = `Ride: ${r.rider_name}
+When: ${when}
+Pickup: ${r.pickup_address}
+Drop-off: ${r.dropoff_address}${r.stops ? '\nStops: ' + r.stops : ''}${r.reason ? '\nReason: ' + r.reason : ''}
+Contact: ${r.rider_contact}
+Duration: ${tierLabel(r.duration_tier)} · Fee: $${r.estimated_fee}${r.notes ? '\nNotes: ' + r.notes : ''}`;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Copied to clipboard — paste into Google Calendar');
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Listen for auth changes
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      checkAuth();
+    }
+  });
+
+  checkAuth();
+</script>
+
+</body>
+</html>

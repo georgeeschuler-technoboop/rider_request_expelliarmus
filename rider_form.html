@@ -213,7 +213,7 @@
   }
 
   .tier-label { font-size: 15px; font-weight: 600; color: var(--ink); }
-  .tier-fee { font-size: 15px; font-weight: 700; color: var(--indigo); }
+  .tier-fee { font-size: 14px; font-weight: 600; color: var(--muted); }
   .tier-fee.free { color: var(--muted); text-decoration: line-through; }
   .tier-fee.free::after {
     content: ' FREE';
@@ -664,10 +664,10 @@
           </div>
           <input type="text" id="reason_custom" style="margin-top:8px;" placeholder="Or type something else">
         </div>
-
-        <div class="field">
-          <label>How long do you need George?</label>
-          <div class="tiers">
+<div class="field">
+  <label>How long do you need George?</label>
+  <div class="field-note" style="margin-top: -2px; margin-bottom: 10px; font-style: normal;">Helps cover the EV charge</div>
+  <div class="tiers">
             <button type="button" class="tier-btn" data-tier="under_30" data-fee="15">
               <span class="tier-label">Under 30 minutes</span>
               <span class="tier-fee" data-base-fee="15">$15</span>

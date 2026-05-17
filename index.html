@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Request a Ride — George Schuler</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/request_a_ride_option1_32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/request_a_ride_option1_16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/request_a_ride_option1_256.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --indigo: #2825BE;
+    --amber: #EB9001;
+    --teal: #0C7A7A;
+    --terra: #CF4C38;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --border: #e5e5e0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 520px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  header { margin-bottom: 28px; }
+
+  .brand {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .subtitle { font-size: 15px; color: var(--muted); }
+
+  /* Service status banners */
+  .status-banner {
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .status-banner.limited {
+    background: rgba(235,144,1,0.1);
+    border: 1px solid rgba(235,144,1,0.35);
+    color: #8a5400;
+  }
+
+  .status-banner.unavailable {
+    background: rgba(207,76,56,0.08);
+    border: 1px solid rgba(207,76,56,0.3);
+    color: var(--terra);
+  }
+
+  .status-banner-icon {
+    flex-shrink: 0;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .status-banner-body { flex: 1; }
+
+  .status-banner-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .status-banner-message {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  /* Closed state — replaces the entire form */
+  .closed-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+
+  .closed-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    background: rgba(207,76,56,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: var(--terra);
+  }
+
+  .closed-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .closed-message {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.5;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+
+  .field-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  input[type="text"], input[type="email"], input[type="tel"],
+  input[type="datetime-local"], textarea, select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    transition: border-color 0.15s;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px rgba(40,37,190,0.1);
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  .tiers { display: grid; grid-template-columns: 1fr; gap: 8px; }
+
+  .tier-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    width: 100%;
+  }
+
+  .tier-btn:hover { border-color: #c4c2bd; }
+  .tier-btn.selected {
+    border-color: var(--indigo);
+    background: rgba(40,37,190,0.04);
+  }
+
+  .tier-label { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .tier-fee { font-size: 15px; font-weight: 700; color: var(--indigo); }
+  .tier-fee.free { color: var(--muted); text-decoration: line-through; }
+  .tier-fee.free::after {
+    content: ' FREE';
+    color: var(--teal);
+    text-decoration: none;
+    margin-left: 4px;
+  }
+
+  .toggle-group { display: flex; gap: 8px; margin-bottom: 8px; }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toggle-btn.selected {
+    border-color: var(--indigo);
+    background: var(--indigo);
+    color: #fff;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #fff;
+    background: var(--indigo);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 8px;
+  }
+
+  .submit-btn:hover:not(:disabled) { background: #1f1c9e; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+  .chip {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .chip.selected {
+    border-color: var(--indigo);
+    background: var(--indigo);
+    color: #fff;
+  }
+
+  .promo-row { display: flex; gap: 8px; }
+
+  .promo-row input {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .promo-check-btn {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .promo-status {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .promo-status.valid { background: rgba(12,122,122,0.1); color: var(--teal); }
+  .promo-status.invalid { background: rgba(207,76,56,0.08); color: var(--terra); }
+
+  .policy-card {
+    background: rgba(235,144,1,0.05);
+    border: 1px solid rgba(235,144,1,0.25);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .policy-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #8a5400;
+    margin-bottom: 8px;
+  }
+
+  .policy-list { list-style: none; padding: 0; margin: 0 0 12px; }
+
+  .policy-list li {
+    font-size: 13px;
+    color: var(--ink);
+    padding: 4px 0 4px 20px;
+    position: relative;
+    line-height: 1.45;
+  }
+
+  .policy-list li::before {
+    content: '•';
+    position: absolute;
+    left: 6px;
+    color: var(--amber);
+    font-weight: bold;
+  }
+
+  .policy-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    padding-top: 8px;
+    border-top: 1px solid rgba(235,144,1,0.2);
+  }
+
+  .policy-checkbox input {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--indigo);
+  }
+
+  .policy-checkbox span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  .success-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    background: rgba(12,122,122,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--teal);
+  }
+
+  .success-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+
+  .success-text {
+    color: var(--muted);
+    font-size: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .reservation-id-box {
+    background: rgba(40,37,190,0.06);
+    border: 1px dashed var(--indigo);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .reservation-id-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .reservation-id {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--indigo);
+    letter-spacing: 1px;
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+
+  .payment-section { margin: 20px 0; }
+
+  .payment-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+
+  .amount-box {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .amount-label { font-size: 13px; color: var(--muted); }
+  .amount-value { font-size: 20px; font-weight: 700; color: var(--ink); }
+
+  .payment-handles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .payment-handle {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .payment-handle:hover {
+    border-color: var(--indigo);
+    background: rgba(40,37,190,0.03);
+  }
+
+  .payment-platform-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .payment-handle-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    word-break: break-all;
+  }
+
+  .payment-note {
+    background: rgba(235,144,1,0.08);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #8a5400;
+    margin-bottom: 16px;
+    line-height: 1.45;
+  }
+
+  .payment-note strong { font-weight: 700; }
+
+  .paid-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--teal);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+
+  .paid-btn:hover:not(:disabled) { background: #0a6868; }
+  .paid-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .paid-confirmation {
+    text-align: center;
+    padding: 16px;
+    background: rgba(12,122,122,0.08);
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  .text-backup {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .text-backup a {
+    color: var(--indigo);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px dashed var(--indigo);
+    padding-bottom: 1px;
+  }
+
+  .text-backup a:hover { background: rgba(40,37,190,0.05); }
+
+  .new-request-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .error {
+    background: rgba(207,76,56,0.08);
+    border: 1px solid rgba(207,76,56,0.2);
+    color: var(--terra);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .footer-note {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+ <header style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+  <img src="/request_a_ride_option1_256.png" alt="" style="width: 56px; height: 56px; flex-shrink: 0;">
+  <div>
+    <div class="brand">George Schuler</div>
+    <h1 style="margin-bottom: 4px;">Request a ride</h1>
+    <p class="subtitle">Let's get you there.</p>
+  </div>
+  </header>
+
+  <!-- Limited availability banner (shown when state = 'limited') -->
+  <div id="status-banner" class="status-banner limited" style="display:none;">
+    <div class="status-banner-icon">⚠️</div>
+    <div class="status-banner-body">
+      <div class="status-banner-title">Limited availability</div>
+      <div class="status-banner-message" id="status-banner-message"></div>
+    </div>
+  </div>
+
+  <div id="error-box" class="error" style="display:none;"></div>
+
+  <!-- Unavailable view (replaces form when state = 'unavailable') -->
+  <div id="closed-view" style="display:none;">
+    <div class="closed-card">
+      <div class="closed-icon">✕</div>
+      <h2 class="closed-title">George is currently unavailable</h2>
+      <p class="closed-message" id="closed-message">Please check back later to request a ride.</p>
+    </div>
+  </div>
+
+  <div id="form-view" style="display:none;">
+    <form id="ride-form">
+
+      <div class="card">
+        <div class="field">
+          <label>Your name</label>
+          <input type="text" id="rider_name" required autocomplete="name" placeholder="First and last">
+        </div>
+
+        <div class="field">
+          <label>Best way to reach you</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle-btn selected" data-contact="phone">Phone</button>
+            <button type="button" class="toggle-btn" data-contact="email">Email</button>
+          </div>
+          <input type="tel" id="rider_contact" required autocomplete="tel" placeholder="(555) 555-5555">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>When do you need the ride?</label>
+          <input type="datetime-local" id="ride_datetime" required>
+          <div class="field-note">Rides must be requested at least 1 hour in advance.</div>
+        </div>
+
+        <div class="field">
+          <label>Pickup address</label>
+          <input type="text" id="pickup_address" required placeholder="Street, city">
+        </div>
+
+        <div class="field">
+          <label>Drop-off address</label>
+          <input type="text" id="dropoff_address" required placeholder="Street, city">
+        </div>
+
+        <div class="field">
+          <label>Any stops along the way? <span class="hint">list all now — no day-of additions</span></label>
+          <textarea id="stops" placeholder="One per line if multiple"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>Reason for the trip <span class="hint">optional</span></label>
+          <div class="chips">
+            <button type="button" class="chip" data-reason="Personal">Personal</button>
+            <button type="button" class="chip" data-reason="Work">Work</button>
+            <button type="button" class="chip" data-reason="Medical">Medical</button>
+            <button type="button" class="chip" data-reason="Airport">Airport</button>
+          </div>
+          <input type="text" id="reason_custom" style="margin-top:8px;" placeholder="Or type something else">
+        </div>
+
+        <div class="field">
+          <label>How long do you need George?</label>
+          <div class="tiers">
+            <button type="button" class="tier-btn" data-tier="under_30" data-fee="15">
+              <span class="tier-label">Under 30 minutes</span>
+              <span class="tier-fee" data-base-fee="15">$15</span>
+            </button>
+            <button type="button" class="tier-btn" data-tier="30_to_60" data-fee="30">
+              <span class="tier-label">30 minutes to 1 hour</span>
+              <span class="tier-fee" data-base-fee="30">$30</span>
+            </button>
+            <button type="button" class="tier-btn" data-tier="60_to_120" data-fee="55">
+              <span class="tier-label">1 to 2 hours</span>
+              <span class="tier-fee" data-base-fee="55">$55</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Promo code <span class="hint">optional</span></label>
+          <div class="promo-row">
+            <input type="text" id="promo_code" placeholder="If you have one" autocomplete="off">
+            <button type="button" class="promo-check-btn" id="promo-check-btn">Apply</button>
+          </div>
+          <div id="promo-status" class="promo-status" style="display:none;"></div>
+        </div>
+
+        <div class="field">
+          <label>Anything else George should know? <span class="hint">optional</span></label>
+          <textarea id="notes" placeholder="Mobility needs, pets, special requests…"></textarea>
+        </div>
+      </div>
+
+      <div class="policy-card">
+        <div class="policy-title">Read before submitting</div>
+        <ul class="policy-list">
+          <li>I will be ready at the requested pickup time</li>
+          <li>If I'm not ready within 15 minutes, George leaves and the fee is not refunded</li>
+          <li>All stops are listed in this request</li>
+        </ul>
+        <label class="policy-checkbox">
+          <input type="checkbox" id="policy_ack">
+          <span>I've read and agree to these terms</span>
+        </label>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">Submit request</button>
+      <p class="footer-note">After submitting, you'll see payment instructions. The ride is confirmed once George verifies payment.</p>
+
+    </form>
+  </div>
+
+  <div id="payment-view" style="display:none;">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <h2 class="success-title">Request received</h2>
+      <p class="success-text">Almost done — send the reservation fee to confirm your ride.</p>
+
+      <div class="reservation-id-box">
+        <div class="reservation-id-label">Your reservation code</div>
+        <div class="reservation-id" id="reservation-id-display">—</div>
+      </div>
+
+      <div class="payment-section">
+        <h3>1. Send payment</h3>
+
+        <div class="amount-box">
+          <span class="amount-label">Amount due</span>
+          <span class="amount-value" id="amount-due">$0</span>
+        </div>
+
+        <div class="payment-handles" id="payment-handles"></div>
+
+        <div class="payment-note">
+          <strong>Important:</strong> Include your reservation code <span id="reservation-id-inline">—</span> in the payment note so George can match it to your request.
+        </div>
+      </div>
+
+      <div class="payment-section">
+        <h3>2. Let George know you paid</h3>
+        <button class="paid-btn" id="mark-paid-btn">I've sent the payment</button>
+        <div class="text-backup" id="text-backup-row">
+          Or <a href="#" id="text-george-link">text George to confirm</a>
+        </div>
+        <div id="paid-confirmation" class="paid-confirmation" style="display:none;">
+          ✓ Got it — George will verify and confirm shortly.
+        </div>
+      </div>
+
+      <button class="new-request-btn" onclick="resetForm()">Submit another request</button>
+    </div>
+  </div>
+
+  <div id="free-view" style="display:none;">
+    <div class="success-card">
+      <div class="success-icon">✓</div>
+      <h2 class="success-title">Request submitted</h2>
+      <p class="success-text">Promo code applied — no payment needed. George will confirm shortly.</p>
+      <div class="reservation-id-box">
+        <div class="reservation-id-label">Your reservation code</div>
+        <div class="reservation-id" id="reservation-id-free">—</div>
+      </div>
+      <button class="new-request-btn" onclick="resetForm()">Submit another request</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // CONFIG
+  // ============================================================
+  const SUPABASE_URL = 'https://sgummlnkfaalgaftjhek.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNndW1tbG5rZmFhbGdhZnRqaGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDA0MDAsImV4cCI6MjA5NDQ3NjQwMH0.ls8Ip-39Mw7rDj6HT_CGLmkEs0D1GT33Nf9DD1ryDfI';
+
+  const PAYMENT_HANDLES = {
+    venmo:    '@George-Schuler-1',
+    cashapp:  '$GeorgeSchuler',
+    zelle:    '(845) 346-5338',
+    paypal:   '@GeorgeSchuler',
+    chime:    '$George-Schuler-1'
+  };
+
+  const GEORGE_PHONE = '8453465338';
+  const MIN_LEAD_MINUTES = 60;
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let contactType = 'phone';
+  let selectedTier = null;
+  let selectedFee = null;
+  let selectedReason = null;
+  let appliedPromoCode = null;
+  let currentRequestId = null;
+  let currentReservationId = null;
+
+  // ============================================================
+  // Service status check (runs on page load BEFORE showing form)
+  // ============================================================
+  async function checkServiceStatus() {
+    const { data, error } = await db
+      .from('service_status')
+      .select('state, message')
+      .eq('id', 1)
+      .maybeSingle();
+
+    // If we can't read status for any reason, default to available
+    // (better to let riders submit than to incorrectly block them)
+    if (error || !data) {
+      showFormView();
+      return;
+    }
+
+    const state = data.state;
+    const message = data.message;
+
+    if (state === 'unavailable') {
+      const closedMsg = message && message.trim()
+        ? message
+        : 'Please check back later to request a ride.';
+      document.getElementById('closed-message').textContent = closedMsg;
+      document.getElementById('closed-view').style.display = 'block';
+      // form stays hidden
+    } else if (state === 'limited') {
+      const limitedMsg = message && message.trim()
+        ? message
+        : 'Response may be slower than usual.';
+      document.getElementById('status-banner-message').textContent = limitedMsg;
+      document.getElementById('status-banner').style.display = 'flex';
+      showFormView();
+    } else {
+      // 'available'
+      showFormView();
+    }
+  }
+
+  function showFormView() {
+    document.getElementById('form-view').style.display = 'block';
+  }
+
+  // Run status check immediately
+  checkServiceStatus();
+
+  // ============================================================
+  // Form behavior
+  // ============================================================
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      contactType = btn.dataset.contact;
+      const input = document.getElementById('rider_contact');
+      if (contactType === 'phone') {
+        input.type = 'tel';
+        input.placeholder = '(555) 555-5555';
+        input.autocomplete = 'tel';
+      } else {
+        input.type = 'email';
+        input.placeholder = 'you@example.com';
+        input.autocomplete = 'email';
+      }
+    });
+  });
+
+  document.querySelectorAll('.tier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedTier = btn.dataset.tier;
+      selectedFee = parseFloat(btn.dataset.fee);
+    });
+  });
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const wasSelected = chip.classList.contains('selected');
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      if (!wasSelected) {
+        chip.classList.add('selected');
+        selectedReason = chip.dataset.reason;
+        document.getElementById('reason_custom').value = '';
+      } else {
+        selectedReason = null;
+      }
+    });
+  });
+
+  document.getElementById('reason_custom').addEventListener('input', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    selectedReason = null;
+  });
+
+  document.getElementById('promo-check-btn').addEventListener('click', async () => {
+    const code = document.getElementById('promo_code').value.trim().toUpperCase();
+    const statusBox = document.getElementById('promo-status');
+    if (!code) {
+      appliedPromoCode = null;
+      statusBox.style.display = 'none';
+      updateTierDisplay(false);
+      return;
+    }
+
+    const { data } = await db
+      .from('promo_codes')
+      .select('code')
+      .eq('code', code)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (data) {
+      appliedPromoCode = code;
+      statusBox.textContent = '✓ Promo code applied — this ride is free.';
+      statusBox.className = 'promo-status valid';
+      statusBox.style.display = 'block';
+      updateTierDisplay(true);
+    } else {
+      appliedPromoCode = null;
+      statusBox.textContent = 'Not a valid code — your ride will be submitted at the normal rate.';
+      statusBox.className = 'promo-status invalid';
+      statusBox.style.display = 'block';
+      updateTierDisplay(false);
+    }
+  });
+
+  function updateTierDisplay(isFree) {
+    document.querySelectorAll('.tier-fee').forEach(el => {
+      const base = el.dataset.baseFee;
+      el.textContent = '$' + base;
+      if (isFree) el.classList.add('free');
+      else el.classList.remove('free');
+    });
+  }
+
+  function setMinDateTime() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + MIN_LEAD_MINUTES);
+    const m = now.getMinutes();
+    now.setMinutes(m + (15 - (m % 15)) % 15);
+    now.setSeconds(0);
+    const pad = n => String(n).padStart(2, '0');
+    const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    document.getElementById('ride_datetime').min = iso;
+  }
+  setMinDateTime();
+
+  document.getElementById('ride-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('error-box').style.display = 'none';
+
+    if (!selectedTier) { showError('Please choose how long you need George.'); return; }
+    if (!document.getElementById('policy_ack').checked) {
+      showError('Please acknowledge the terms before submitting.');
+      return;
+    }
+
+    const requestedTime = new Date(document.getElementById('ride_datetime').value);
+    const minTime = new Date();
+    minTime.setMinutes(minTime.getMinutes() + MIN_LEAD_MINUTES);
+    if (requestedTime < minTime) {
+      showError(`Rides must be requested at least ${MIN_LEAD_MINUTES} minutes in advance. Please pick a later time.`);
+      return;
+    }
+
+    // Re-check service status before allowing submission
+    // (in case George went unavailable while they were filling out the form)
+    const { data: statusData } = await db
+      .from('service_status')
+      .select('state, message')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (statusData && statusData.state === 'unavailable') {
+      const msg = (statusData.message && statusData.message.trim())
+        ? statusData.message
+        : 'Please check back later.';
+      showError(`George is currently unavailable. ${msg}`);
+      return;
+    }
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    const { data: resvData, error: resvError } = await db.rpc('generate_reservation_id');
+    if (resvError) {
+      console.error(resvError);
+      showError('Could not generate reservation code. Please try again.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit request';
+      return;
+    }
+    const reservationId = resvData;
+
+    const customReason = document.getElementById('reason_custom').value.trim();
+    const finalReason = customReason || selectedReason || null;
+    const hasPromo = appliedPromoCode !== null;
+
+    const payload = {
+      rider_name: document.getElementById('rider_name').value.trim(),
+      rider_contact: document.getElementById('rider_contact').value.trim(),
+      contact_type: contactType,
+      ride_datetime: requestedTime.toISOString(),
+      pickup_address: document.getElementById('pickup_address').value.trim(),
+      dropoff_address: document.getElementById('dropoff_address').value.trim(),
+      stops: document.getElementById('stops').value.trim() || null,
+      reason: finalReason,
+      notes: document.getElementById('notes').value.trim() || null,
+      duration_tier: selectedTier,
+      estimated_fee: hasPromo ? 0 : selectedFee,
+      promo_code_used: appliedPromoCode,
+      reservation_id: reservationId,
+      policy_acknowledged: true,
+      status: hasPromo ? 'pending' : 'awaiting_payment'
+    };
+
+    const { data: inserted, error } = await db
+      .from('ride_requests')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      showError('Something went wrong. Please try again or text George directly.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit request';
+      return;
+    }
+
+    currentRequestId = inserted.id;
+    currentReservationId = reservationId;
+    document.getElementById('form-view').style.display = 'none';
+
+    if (hasPromo) {
+      document.getElementById('reservation-id-free').textContent = reservationId;
+      document.getElementById('free-view').style.display = 'block';
+    } else {
+      document.getElementById('reservation-id-display').textContent = reservationId;
+      document.getElementById('reservation-id-inline').textContent = reservationId;
+      document.getElementById('amount-due').textContent = '$' + selectedFee;
+      renderPaymentHandles();
+      updateTextGeorgeLink(reservationId);
+      document.getElementById('payment-view').style.display = 'block';
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  function updateTextGeorgeLink(reservationId) {
+    const link = document.getElementById('text-george-link');
+    const body = encodeURIComponent(`Paid — ${reservationId}`);
+    link.href = `sms:${GEORGE_PHONE}?&body=${body}`;
+  }
+
+  function renderPaymentHandles() {
+    const container = document.getElementById('payment-handles');
+    const platforms = [
+      { name: 'Venmo',    handle: PAYMENT_HANDLES.venmo },
+      { name: 'Cash App', handle: PAYMENT_HANDLES.cashapp },
+      { name: 'Zelle',    handle: PAYMENT_HANDLES.zelle },
+      { name: 'PayPal',   handle: PAYMENT_HANDLES.paypal },
+      { name: 'Chime',    handle: PAYMENT_HANDLES.chime }
+    ];
+    container.innerHTML = platforms.map(p => `
+      <button class="payment-handle" data-handle="${p.handle}" data-name="${p.name}">
+        <span class="payment-platform-name">${p.name}</span>
+        <span class="payment-handle-value">${p.handle}</span>
+      </button>
+    `).join('');
+
+    container.querySelectorAll('.payment-handle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const handle = btn.dataset.handle;
+        navigator.clipboard.writeText(handle).then(() => {
+          const valueEl = btn.querySelector('.payment-handle-value');
+          const orig = valueEl.textContent;
+          valueEl.textContent = 'Copied ✓';
+          setTimeout(() => { valueEl.textContent = orig; }, 1500);
+        });
+      });
+    });
+  }
+
+  document.getElementById('mark-paid-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('mark-paid-btn');
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+
+    const { error } = await db
+      .from('ride_requests')
+      .update({
+        rider_claims_paid: true,
+        paid_at: new Date().toISOString(),
+        status: 'paid_unconfirmed'
+      })
+      .eq('id', currentRequestId);
+
+    if (error) {
+      console.error(error);
+      btn.disabled = false;
+      btn.textContent = "I've sent the payment";
+      alert('Could not update. Please try again or text George.');
+      return;
+    }
+
+    btn.style.display = 'none';
+    document.getElementById('text-backup-row').style.display = 'none';
+    document.getElementById('paid-confirmation').style.display = 'block';
+  });
+
+  function showError(msg) {
+    const errorBox = document.getElementById('error-box');
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('ride-form').reset();
+    document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    document.getElementById('promo-status').style.display = 'none';
+    document.getElementById('mark-paid-btn').style.display = 'block';
+    document.getElementById('mark-paid-btn').disabled = false;
+    document.getElementById('mark-paid-btn').textContent = "I've sent the payment";
+    document.getElementById('text-backup-row').style.display = 'block';
+    document.getElementById('paid-confirmation').style.display = 'none';
+    selectedTier = null;
+    selectedFee = null;
+    selectedReason = null;
+    appliedPromoCode = null;
+    currentRequestId = null;
+    currentReservationId = null;
+    updateTierDisplay(false);
+    document.getElementById('payment-view').style.display = 'none';
+    document.getElementById('free-view').style.display = 'none';
+    document.getElementById('form-view').style.display = 'block';
+    setMinDateTime();
+  }
+</script>
+
+</body>
+</html>

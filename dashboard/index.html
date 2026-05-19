@@ -425,6 +425,8 @@
   .status-approved { background: rgba(12,122,122,0.15); color: var(--teal); }
   .status-rejected { background: rgba(207,76,56,0.12); color: var(--terra); }
   .status-completed { background: rgba(107,107,107,0.1); color: var(--muted); }
+  .status-cancelled { background: rgba(107,107,107,0.15); color: var(--muted); }
+  .status-no_show { background: rgba(207,76,56,0.18); color: var(--terra); }
 
   .request-when {
     font-size: 15px;
@@ -679,6 +681,154 @@
 
   .promo-section-title:first-child { margin-top: 0; }
 
+  /* Schedule view */
+.schedule-day {
+  margin-bottom: 28px;
+}
+
+.schedule-day-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+.schedule-day-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.schedule-day-title.today {
+  color: var(--indigo);
+}
+
+.schedule-day-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.schedule-ride {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+.schedule-ride.pending-soon {
+  border-left: 3px solid var(--amber);
+}
+
+.schedule-ride.approved {
+  border-left: 3px solid var(--teal);
+}
+
+.schedule-ride-time {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: 'SF Mono', Menlo, monospace;
+  min-width: 90px;
+}
+
+.schedule-ride-info {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.schedule-ride-rider {
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.schedule-ride-route {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.schedule-ride-route strong { color: var(--ink); font-weight: 500; }
+
+.schedule-ride-status-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-radius: 10px;
+  vertical-align: middle;
+}
+
+.schedule-ride-status-pill.pending {
+  background: rgba(235,144,1,0.18);
+  color: #8a5400;
+}
+
+.schedule-ride-status-pill.approved {
+  background: rgba(12,122,122,0.15);
+  color: var(--teal);
+}
+
+.schedule-ride-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.schedule-btn {
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.schedule-btn-complete {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+.schedule-btn-cancelled {
+  background: #fff;
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+.schedule-btn-noshow {
+  background: #fff;
+  color: var(--terra);
+  border-color: var(--terra);
+}
+
+.schedule-btn-approve {
+  background: var(--indigo);
+  color: #fff;
+  border-color: var(--indigo);
+}
+
+@media (max-width: 700px) {
+  .schedule-ride {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .schedule-ride-time { min-width: 0; }
+  .schedule-ride-actions { flex-wrap: wrap; }
+}
+
   @media (max-width: 600px) {
     .promo-card {
       grid-template-columns: 1fr auto;
@@ -762,20 +912,29 @@
   </div>
 
   <!-- Top-level nav -->
-  <div class="nav-top">
-    <button class="nav-top-btn active" data-view="rides">Rides</button>
-    <button class="nav-top-btn" data-view="promo">Promo codes</button>
-  </div>
+<div class="nav-top">
+  <button class="nav-top-btn active" data-view="schedule">Schedule</button>
+  <button class="nav-top-btn" data-view="rides">Rides</button>
+  <button class="nav-top-btn" data-view="promo">Promo codes</button>
+</div>
 
+  <div id="schedule-view">
+  <div id="schedule-container">
+    <div class="loading">Loading schedule…</div>
+  </div>
+</div>
+  
   <div id="rides-view">
-    <div class="tabs">
-      <button class="tab" data-status="paid_unconfirmed">Verify Payment <span class="count" id="count-paid_unconfirmed">0</span></button>
-      <button class="tab" data-status="awaiting_payment">Awaiting Payment <span class="count" id="count-awaiting_payment">0</span></button>
-      <button class="tab active" data-status="pending">Ready to Approve <span class="count" id="count-pending">0</span></button>
-      <button class="tab" data-status="approved">Approved <span class="count" id="count-approved">0</span></button>
-      <button class="tab" data-status="completed">Completed <span class="count" id="count-completed">0</span></button>
-      <button class="tab" data-status="rejected">Rejected <span class="count" id="count-rejected">0</span></button>
-    </div>
+<div class="tabs">
+  <button class="tab" data-status="paid_unconfirmed">Verify Payment <span class="count" id="count-paid_unconfirmed">0</span></button>
+  <button class="tab" data-status="awaiting_payment">Awaiting Payment <span class="count" id="count-awaiting_payment">0</span></button>
+  <button class="tab active" data-status="pending">Ready to Approve <span class="count" id="count-pending">0</span></button>
+  <button class="tab" data-status="approved">Approved <span class="count" id="count-approved">0</span></button>
+  <button class="tab" data-status="completed">Completed <span class="count" id="count-completed">0</span></button>
+  <button class="tab" data-status="cancelled">Cancelled <span class="count" id="count-cancelled">0</span></button>
+  <button class="tab" data-status="no_show">No-show <span class="count" id="count-no_show">0</span></button>
+  <button class="tab" data-status="rejected">Rejected <span class="count" id="count-rejected">0</span></button>
+</div>
 
     <div id="requests-container">
       <div class="loading">Loading…</div>
@@ -810,7 +969,7 @@
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  let currentView = 'rides';
+  let currentView = 'schedule';
   let currentTab = 'pending';
   let allRequests = [];
   let allPromoCodes = [];
@@ -848,18 +1007,22 @@
     location.reload();
   }
 
-  async function checkAuth() {
-    const { data: { session } } = await db.auth.getSession();
-    if (session) {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      await loadServiceStatus();
-      await loadRequests();
-    } else {
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('app').style.display = 'none';
-    }
+async function checkAuth() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    await loadServiceStatus();
+    await loadRequests();
+    // Show schedule view by default
+    document.getElementById('schedule-view').style.display = 'block';
+    document.getElementById('rides-view').style.display = 'none';
+    renderSchedule();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
   }
+}
 
   // ============================================================
   // Service status
@@ -986,23 +1149,30 @@
   // ============================================================
   // Top-level nav
   // ============================================================
-  document.querySelectorAll('.nav-top-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      document.querySelectorAll('.nav-top-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentView = btn.dataset.view;
+document.querySelectorAll('.nav-top-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('.nav-top-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
 
-      if (currentView === 'rides') {
-        document.getElementById('rides-view').style.display = 'block';
-        document.getElementById('promo-view').style.display = 'none';
-        await loadRequests();
-      } else {
-        document.getElementById('rides-view').style.display = 'none';
-        document.getElementById('promo-view').style.display = 'block';
-        await loadPromoCodes();
-      }
-    });
+    // Hide all views first
+    document.getElementById('schedule-view').style.display = 'none';
+    document.getElementById('rides-view').style.display = 'none';
+    document.getElementById('promo-view').style.display = 'none';
+
+    if (currentView === 'schedule') {
+      document.getElementById('schedule-view').style.display = 'block';
+      await loadRequests();
+      renderSchedule();
+    } else if (currentView === 'rides') {
+      document.getElementById('rides-view').style.display = 'block';
+      await loadRequests();
+    } else {
+      document.getElementById('promo-view').style.display = 'block';
+      await loadPromoCodes();
+    }
   });
+});
 
   // ============================================================
   // Rides
@@ -1033,22 +1203,183 @@
     renderRequests();
   }
 
-  function updateCounts() {
-    const counts = {
-      awaiting_payment: 0, paid_unconfirmed: 0, pending: 0,
-      approved: 0, completed: 0, rejected: 0
-    };
-    allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
-    Object.keys(counts).forEach(k => {
-      const el = document.getElementById('count-' + k);
-      if (el) el.textContent = counts[k];
-    });
+  // ============================================================
+// Schedule view
+// ============================================================
+function renderSchedule() {
+  const container = document.getElementById('schedule-container');
 
-    const paidTab = document.querySelector('[data-status="paid_unconfirmed"]');
-    if (paidTab) paidTab.classList.toggle('has-attention', counts.paid_unconfirmed > 0);
-    const pendingTab = document.querySelector('[data-status="pending"]');
-    if (pendingTab) pendingTab.classList.toggle('has-attention', counts.pending > 0);
+  // Get approved + soon-upcoming pending rides
+  const now = new Date();
+  const twoDaysOut = new Date(now);
+  twoDaysOut.setDate(twoDaysOut.getDate() + 2);
+
+  const scheduledRides = allRequests.filter(r => {
+    if (r.status === 'approved') return true;
+    if (r.status === 'pending' || r.status === 'paid_unconfirmed') {
+      const rideTime = new Date(r.ride_datetime);
+      return rideTime <= twoDaysOut;
+    }
+    return false;
+  });
+
+  if (scheduledRides.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        No upcoming rides scheduled.<br>
+        <span style="font-size: 13px; color: var(--muted);">When you approve rides, they'll appear here grouped by day.</span>
+      </div>
+    `;
+    return;
   }
+
+  // Group by date
+  const groupedByDate = {};
+  scheduledRides.forEach(r => {
+    const d = new Date(r.ride_datetime);
+    const dateKey = d.toISOString().split('T')[0]; // YYYY-MM-DD
+    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+    groupedByDate[dateKey].push(r);
+  });
+
+  // Sort dates
+  const sortedDates = Object.keys(groupedByDate).sort();
+
+  // Sort rides within each date by time
+  sortedDates.forEach(dateKey => {
+    groupedByDate[dateKey].sort((a, b) =>
+      new Date(a.ride_datetime) - new Date(b.ride_datetime)
+    );
+  });
+
+  const todayKey = now.toISOString().split('T')[0];
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowKey = tomorrow.toISOString().split('T')[0];
+
+  const html = sortedDates.map(dateKey => {
+    const dateObj = new Date(dateKey + 'T00:00:00');
+    let dayLabel;
+    if (dateKey === todayKey) {
+      dayLabel = 'Today';
+    } else if (dateKey === tomorrowKey) {
+      dayLabel = 'Tomorrow';
+    } else {
+      dayLabel = dateObj.toLocaleDateString('en-US', {
+        weekday: 'long', month: 'short', day: 'numeric'
+      });
+    }
+
+    const rides = groupedByDate[dateKey];
+    const ridesHtml = rides.map(r => renderScheduleRide(r)).join('');
+
+    return `
+      <div class="schedule-day">
+        <div class="schedule-day-header">
+          <div class="schedule-day-title ${dateKey === todayKey ? 'today' : ''}">${dayLabel}</div>
+          <div class="schedule-day-count">${rides.length} ${rides.length === 1 ? 'ride' : 'rides'}</div>
+        </div>
+        ${ridesHtml}
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+  attachScheduleListeners();
+}
+
+function renderScheduleRide(r) {
+  const d = new Date(r.ride_datetime);
+  const timeStr = d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit'
+  });
+
+  const isPending = r.status === 'pending' || r.status === 'paid_unconfirmed';
+  const cardClass = isPending ? 'pending-soon' : 'approved';
+
+  const statusPill = isPending
+    ? '<span class="schedule-ride-status-pill pending">Not yet approved</span>'
+    : '<span class="schedule-ride-status-pill approved">Approved</span>';
+
+  const cashTag = r.payment_method === 'cash'
+    ? '<span class="cash-badge">CASH</span>'
+    : '';
+
+  let actions;
+  if (isPending) {
+    actions = `
+      <button class="schedule-btn schedule-btn-approve" data-schedule-action="approve" data-id="${r.id}">Approve</button>
+    `;
+  } else {
+    actions = `
+      <button class="schedule-btn schedule-btn-complete" data-schedule-action="complete" data-id="${r.id}">✓ Done</button>
+      <button class="schedule-btn schedule-btn-cancelled" data-schedule-action="cancelled" data-id="${r.id}">Cancelled</button>
+      <button class="schedule-btn schedule-btn-noshow" data-schedule-action="no_show" data-id="${r.id}">No-show</button>
+    `;
+  }
+
+  return `
+    <div class="schedule-ride ${cardClass}" data-id="${r.id}">
+      <div class="schedule-ride-time">${timeStr}</div>
+      <div class="schedule-ride-info">
+        <div class="schedule-ride-rider">${escapeHtml(r.rider_name)} ${cashTag} ${statusPill}</div>
+        <div class="schedule-ride-route">
+          <strong>From:</strong> ${escapeHtml(r.pickup_address)}<br>
+          <strong>To:</strong> ${escapeHtml(r.dropoff_address)}
+          ${r.stops ? `<br><strong>Stops:</strong> ${escapeHtml(r.stops)}` : ''}
+        </div>
+      </div>
+      <div class="schedule-ride-actions">
+        ${actions}
+      </div>
+    </div>
+  `;
+}
+
+function attachScheduleListeners() {
+  document.querySelectorAll('[data-schedule-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.scheduleAction;
+      const id = btn.dataset.id;
+
+      if (action === 'approve') {
+        await updateStatus(id, 'approved');
+      } else if (action === 'complete') {
+        const ride = allRequests.find(x => x.id === id);
+        if (ride && ride.payment_method === 'cash') {
+          showCashCompleteModal(ride);
+        } else {
+          await updateStatus(id, 'completed');
+        }
+      } else if (action === 'cancelled') {
+        await updateStatus(id, 'cancelled');
+      } else if (action === 'no_show') {
+        await updateStatus(id, 'no_show');
+      }
+
+      // After action, re-render schedule
+      renderSchedule();
+    });
+  });
+}
+
+function updateCounts() {
+  const counts = {
+    awaiting_payment: 0, paid_unconfirmed: 0, pending: 0,
+    approved: 0, completed: 0, rejected: 0,
+    cancelled: 0, no_show: 0
+  };
+  allRequests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+  Object.keys(counts).forEach(k => {
+    const el = document.getElementById('count-' + k);
+    if (el) el.textContent = counts[k];
+  });
+
+  const paidTab = document.querySelector('[data-status="paid_unconfirmed"]');
+  if (paidTab) paidTab.classList.toggle('has-attention', counts.paid_unconfirmed > 0);
+  const pendingTab = document.querySelector('[data-status="pending"]');
+  if (pendingTab) pendingTab.classList.toggle('has-attention', counts.pending > 0);
+}
 
   function renderRequests() {
     const container = document.getElementById('requests-container');
@@ -1096,16 +1427,18 @@
     }[tier] || tier;
   }
 
-  function statusLabel(s) {
-    return {
-      'awaiting_payment': 'awaiting payment',
-      'paid_unconfirmed': 'rider says paid',
-      'pending': 'ready to approve',
-      'approved': 'approved',
-      'completed': 'completed',
-      'rejected': 'rejected'
-    }[s] || s;
-  }
+function statusLabel(s) {
+  return {
+    'awaiting_payment': 'awaiting payment',
+    'paid_unconfirmed': 'rider says paid',
+    'pending': 'ready to approve',
+    'approved': 'approved',
+    'completed': 'completed',
+    'rejected': 'rejected',
+    'cancelled': 'cancelled',
+    'no_show': 'no-show'
+  }[s] || s;
+}
 
   function contactLink(contact, type) {
     if (type === 'phone') {
@@ -1183,53 +1516,70 @@
     `;
   }
 
-  function renderActions(r) {
-    if (r.status === 'awaiting_payment') {
-      return `
-        <button class="btn btn-secondary" data-action="mark_paid" data-id="${r.id}">Mark paid (manually)</button>
-        <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Cancel</button>
-      `;
-    }
-    if (r.status === 'paid_unconfirmed') {
-      return `
-        <button class="btn btn-approve" data-action="approve" data-id="${r.id}">Verify & approve</button>
-        <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Reject</button>
-      `;
-    }
-    if (r.status === 'pending') {
-      return `
-        <button class="btn btn-approve" data-action="approve" data-id="${r.id}">Approve</button>
-        <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Reject</button>
-      `;
-    }
-    if (r.status === 'approved') {
-      return `<button class="btn btn-complete" data-action="complete" data-id="${r.id}">Mark complete</button>`;
-    }
-    return `<button class="btn btn-reopen" data-action="reopen" data-id="${r.id}">Move back to pending</button>`;
+function renderActions(r) {
+  if (r.status === 'awaiting_payment') {
+    return `
+      <button class="btn btn-secondary" data-action="mark_paid" data-id="${r.id}">Mark paid (manually)</button>
+      <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Cancel</button>
+    `;
   }
+  if (r.status === 'paid_unconfirmed') {
+    return `
+      <button class="btn btn-approve" data-action="approve" data-id="${r.id}">Verify & approve</button>
+      <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Reject</button>
+    `;
+  }
+  if (r.status === 'pending') {
+    return `
+      <button class="btn btn-approve" data-action="approve" data-id="${r.id}">Approve</button>
+      <button class="btn btn-reject" data-action="reject" data-id="${r.id}">Reject</button>
+    `;
+  }
+  if (r.status === 'approved') {
+    return `
+      <button class="btn btn-complete" data-action="complete" data-id="${r.id}">Mark complete</button>
+      <button class="btn btn-secondary" data-action="cancelled" data-id="${r.id}">Cancelled</button>
+      <button class="btn btn-reject" data-action="no_show" data-id="${r.id}">No-show</button>
+    `;
+  }
+  return `<button class="btn btn-reopen" data-action="reopen" data-id="${r.id}">Move back to pending</button>`;
+}
 
-  function attachActionListeners() {
-    document.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        if (action === 'copy') copyDetails(id);
-        else if (action === 'approve') updateStatus(id, 'approved');
-        else if (action === 'reject') updateStatus(id, 'rejected');
-        else if (action === 'complete') updateStatus(id, 'completed');
-        else if (action === 'reopen') updateStatus(id, 'pending');
-        else if (action === 'mark_paid') updateStatus(id, 'paid_unconfirmed', { rider_claims_paid: true, paid_at: new Date().toISOString() });
-      });
+function attachActionListeners() {
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      if (action === 'copy') copyDetails(id);
+      else if (action === 'approve') updateStatus(id, 'approved');
+      else if (action === 'reject') updateStatus(id, 'rejected');
+      else if (action === 'complete') {
+        const ride = allRequests.find(x => x.id === id);
+        if (ride && ride.payment_method === 'cash') {
+          showCashCompleteModal(ride);
+        } else {
+          updateStatus(id, 'completed');
+        }
+      }
+      else if (action === 'cancelled') updateStatus(id, 'cancelled');
+      else if (action === 'no_show') updateStatus(id, 'no_show');
+      else if (action === 'reopen') updateStatus(id, 'pending');
+      else if (action === 'mark_paid') updateStatus(id, 'paid_unconfirmed', { rider_claims_paid: true, paid_at: new Date().toISOString() });
     });
-  }
+  });
+}
 
-  async function updateStatus(id, newStatus, extraFields = {}) {
-    const update = { status: newStatus, decided_at: new Date().toISOString(), ...extraFields };
-    const { error } = await db.from('ride_requests').update(update).eq('id', id);
-    if (error) { showToast('Error: ' + error.message); return; }
-    showToast(`Marked as ${statusLabel(newStatus)}`);
-    await loadRequests();
+async function updateStatus(id, newStatus, extraFields = {}) {
+  const update = { status: newStatus, decided_at: new Date().toISOString(), ...extraFields };
+  const { error } = await db.from('ride_requests').update(update).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(`Marked as ${statusLabel(newStatus)}`);
+  await loadRequests();
+  // Refresh schedule view if it's currently visible
+  if (currentView === 'schedule') {
+    renderSchedule();
   }
+}
 
   function copyDetails(id) {
     const r = allRequests.find(x => x.id === id);

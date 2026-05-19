@@ -741,20 +741,36 @@
         </div>
       </div>
 
-      <div class="payment-section">
-        <h3>2. Let George know you paid</h3>
-        <button class="paid-btn" id="mark-paid-btn">I've sent the payment</button>
-        <div class="text-backup" id="text-backup-row">
-          Or <a href="#" id="text-george-link">text George to confirm</a>
-        </div>
-        <div id="paid-confirmation" class="paid-confirmation" style="display:none;">
-          ✓ Got it — George will verify and confirm shortly.
-        </div>
-      </div>
+<div class="payment-section">
+  <h3>1. Send payment</h3>
 
-      <button class="new-request-btn" onclick="resetForm()">Submit another request</button>
+  <div class="amount-box">
+    <span class="amount-label">Amount due</span>
+    <span class="amount-value" id="amount-due">$0</span>
+  </div>
+
+  <div class="payment-handles" id="payment-handles"></div>
+
+  <div class="payment-note">
+    <strong>Important:</strong> Include your reservation code <span id="reservation-id-inline">—</span> in the payment note so George can match it to your request.
+  </div>
+
+  <div style="text-align: center; margin: 16px 0 12px; font-size: 13px; color: var(--muted);">— or —</div>
+
+  <button class="cash-option-btn" id="cash-option-btn" style="width: 100%; padding: 14px; background: #fff; border: 1px dashed var(--amber); border-radius: 10px; font-size: 14px; font-weight: 600; color: #8a5400; cursor: pointer; font-family: inherit;">
+    Pay $<span id="cash-amount-display">0</span> in cash at pickup
+  </button>
+
+  <div id="cash-acknowledgment" style="display: none; margin-top: 12px; padding: 16px; background: rgba(235,144,1,0.08); border: 1px solid rgba(235,144,1,0.35); border-radius: 10px;">
+    <div style="font-size: 14px; line-height: 1.5; color: var(--ink); margin-bottom: 14px;">
+      Cash works — you'll pay $<span id="cash-confirm-amount">0</span> when George arrives. Just a heads up: if it doesn't get paid on pickup, you won't get a ride and you can't request future rides.
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button id="cash-cancel-btn" style="flex: 1; padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;">Cancel</button>
+      <button id="cash-confirm-btn" style="flex: 2; padding: 10px; background: var(--amber); color: #fff; border: none; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">Got it — book the cash ride</button>
     </div>
   </div>
+</div>
 
   <div id="free-view" style="display:none;">
     <div class="success-card">
@@ -1040,15 +1056,16 @@
     if (hasPromo) {
       document.getElementById('reservation-id-free').textContent = reservationId;
       document.getElementById('free-view').style.display = 'block';
-    } else {
-      document.getElementById('reservation-id-display').textContent = reservationId;
-      document.getElementById('reservation-id-inline').textContent = reservationId;
-      document.getElementById('amount-due').textContent = '$' + selectedFee;
-      renderPaymentHandles();
-      updateTextGeorgeLink(reservationId);
-      document.getElementById('payment-view').style.display = 'block';
-    }
-
+   } else {
+    document.getElementById('reservation-id-display').textContent = reservationId;
+    document.getElementById('reservation-id-inline').textContent = reservationId;
+    document.getElementById('amount-due').textContent = '$' + selectedFee;
+    document.getElementById('cash-amount-display').textContent = selectedFee;
+    document.getElementById('cash-confirm-amount').textContent = selectedFee;
+    renderPaymentHandles();
+    updateTextGeorgeLink(reservationId);
+    document.getElementById('payment-view').style.display = 'block';
+  }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
@@ -1086,6 +1103,55 @@
       });
     });
   }
+
+  // ============================================================
+// Cash option handlers
+// ============================================================
+document.getElementById('cash-option-btn').addEventListener('click', () => {
+  document.getElementById('cash-acknowledgment').style.display = 'block';
+  document.getElementById('cash-option-btn').style.display = 'none';
+});
+
+document.getElementById('cash-cancel-btn').addEventListener('click', () => {
+  document.getElementById('cash-acknowledgment').style.display = 'none';
+  document.getElementById('cash-option-btn').style.display = 'block';
+});
+
+document.getElementById('cash-confirm-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('cash-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Booking…';
+
+  const { error } = await db
+    .from('ride_requests')
+    .update({
+      payment_method: 'cash',
+      status: 'pending'
+    })
+    .eq('id', currentRequestId);
+
+  if (error) {
+    console.error(error);
+    btn.disabled = false;
+    btn.textContent = 'Got it — book the cash ride';
+    alert('Could not book the cash ride. Please try again or text George.');
+    return;
+  }
+
+  // Show the cash confirmation view (reuse the free-view styling, just different message)
+  document.getElementById('payment-view').style.display = 'none';
+  document.getElementById('reservation-id-free').textContent = currentReservationId;
+
+  // Update the free-view to show cash messaging
+  const freeView = document.getElementById('free-view');
+  const freeTitle = freeView.querySelector('.success-title');
+  const freeText = freeView.querySelector('.success-text');
+  freeTitle.textContent = 'Cash ride booked';
+  freeText.innerHTML = 'See you at pickup with <strong>$' + selectedFee + ' cash</strong>. George will confirm shortly.';
+
+  freeView.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
   document.getElementById('mark-paid-btn').addEventListener('click', async () => {
     const btn = document.getElementById('mark-paid-btn');

@@ -428,6 +428,82 @@
   .status-cancelled { background: rgba(107,107,107,0.15); color: var(--muted); }
   .status-no_show { background: rgba(207,76,56,0.18); color: var(--terra); }
 
+  /* Cash badge — visually distinct from digital rides */
+.cash-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--amber);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.payment-strip.cash {
+  background: rgba(235,144,1,0.08);
+  border: 1px solid rgba(235,144,1,0.3);
+}
+
+.cash-confirm-modal {
+  background: rgba(0,0,0,0.5);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cash-confirm-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+}
+
+.cash-confirm-card h3 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.cash-confirm-card p {
+  color: var(--muted);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.cash-confirm-card .actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.cash-confirm-card .actions-row button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid;
+}
+
+.cash-confirm-card .btn-cash-yes {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+.cash-confirm-card .btn-cash-no {
+  background: #fff;
+  color: var(--terra);
+  border-color: var(--terra);
+}
   .request-when {
     font-size: 15px;
     font-weight: 600;
@@ -1450,28 +1526,48 @@ function statusLabel(s) {
   }
 
   function renderPaymentStrip(r) {
-    if (r.promo_code_used) {
-      return `
-        <div class="payment-strip promo">
-          <div><strong>Promo code:</strong> <span style="font-family:'SF Mono',Menlo,monospace;font-weight:700;color:var(--teal);">${escapeHtml(r.promo_code_used)}</span> — free ride</div>
-          ${r.reservation_id ? `<span class="reservation-pill">${escapeHtml(r.reservation_id)}</span>` : ''}
-        </div>
-      `;
-    }
-
-    const needsAttention = r.status === 'paid_unconfirmed';
-    const paidNote = r.rider_claims_paid
-      ? `<span style="color:var(--teal);font-weight:600;">✓ Rider says paid${r.paid_at ? ' ' + fmtRelative(r.paid_at) : ''}</span>`
-      : `<span style="color:var(--muted);">Awaiting payment</span>`;
-
+  if (r.promo_code_used) {
     return `
-      <div class="payment-strip ${needsAttention ? 'attention' : ''}">
-        <div><strong>$${r.estimated_fee}</strong> · ${paidNote}</div>
+      <div class="payment-strip promo">
+        <div><strong>Promo code:</strong> <span style="font-family:'SF Mono',Menlo,monospace;font-weight:700;color:var(--teal);">${escapeHtml(r.promo_code_used)}</span> — free ride</div>
         ${r.reservation_id ? `<span class="reservation-pill">${escapeHtml(r.reservation_id)}</span>` : ''}
       </div>
     `;
   }
 
+  // Cash rides — show distinct styling and cash status
+  if (r.payment_method === 'cash') {
+    let cashStatus = '';
+    if (r.cash_collected === true) {
+      cashStatus = `<span style="color:var(--teal);font-weight:600;">✓ Cash collected</span>`;
+    } else if (r.cash_collected === false) {
+      cashStatus = `<span style="color:var(--terra);font-weight:600;">✗ Did not pay</span>`;
+    } else {
+      cashStatus = `<span style="color:#8a5400;font-weight:600;">Pay at pickup</span>`;
+    }
+
+    return `
+      <div class="payment-strip cash">
+        <div><strong>$${r.estimated_fee}</strong> <span class="cash-badge">CASH</span> · ${cashStatus}</div>
+        ${r.reservation_id ? `<span class="reservation-pill">${escapeHtml(r.reservation_id)}</span>` : ''}
+      </div>
+    `;
+  }
+
+  // Digital payment rides (existing logic)
+  const needsAttention = r.status === 'paid_unconfirmed';
+  const paidNote = r.rider_claims_paid
+    ? `<span style="color:var(--teal);font-weight:600;">✓ Rider says paid${r.paid_at ? ' ' + fmtRelative(r.paid_at) : ''}</span>`
+    : `<span style="color:var(--muted);">Awaiting payment</span>`;
+
+  return `
+    <div class="payment-strip ${needsAttention ? 'attention' : ''}">
+      <div><strong>$${r.estimated_fee}</strong> · ${paidNote}</div>
+      ${r.reservation_id ? `<span class="reservation-pill">${escapeHtml(r.reservation_id)}</span>` : ''}
+    </div>
+  `;
+}
+  
   function renderCard(r) {
     const isAttention = r.status === 'paid_unconfirmed';
     return `
@@ -1566,6 +1662,42 @@ function attachActionListeners() {
       else if (action === 'reopen') updateStatus(id, 'pending');
       else if (action === 'mark_paid') updateStatus(id, 'paid_unconfirmed', { rider_claims_paid: true, paid_at: new Date().toISOString() });
     });
+  });
+}
+
+  function showCashCompleteModal(ride) {
+  // Remove any existing modal
+  const existing = document.querySelector('.cash-confirm-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'cash-confirm-modal';
+  modal.innerHTML = `
+    <div class="cash-confirm-card">
+      <h3>Cash collected from ${escapeHtml(ride.rider_name)}?</h3>
+      <p>This rider owes $${ride.estimated_fee} cash. Did they pay at pickup?</p>
+      <div class="actions-row">
+        <button class="btn-cash-no" data-cash-action="no">No — they didn't pay</button>
+        <button class="btn-cash-yes" data-cash-action="yes">Yes — got the cash</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelector('[data-cash-action="yes"]').addEventListener('click', async () => {
+    modal.remove();
+    await updateStatus(ride.id, 'completed', { cash_collected: true });
+  });
+
+  modal.querySelector('[data-cash-action="no"]').addEventListener('click', async () => {
+    modal.remove();
+    await updateStatus(ride.id, 'completed', { cash_collected: false });
+    showToast('Marked complete — cash NOT collected. Add to ban list.');
+  });
+
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
   });
 }
 
